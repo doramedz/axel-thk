@@ -52,7 +52,6 @@ Ice surface elevation change: [Hugonnet et al. (2021)](https://www.sedoo.fr/thei
 
 #### Glacier outlines
 Glacier outlines: [Randolph Glacier Inventory 7.0](https://www.glims.org/RGI/) (RGIv7) Version 9 (2023 Release)
-ARGUS files:
 - domain_rgiX.exp contains domain outline and nunataks (holes) as closed contours
 - domain_rgiX_outline.exp and domain_rgiX_holes.ext split outline and hole contours in separate files
 
@@ -60,7 +59,6 @@ ARGUS files:
 
 #### Radar data
 Ice thickness observations: Operation Icebridge MCoRDS ice thickness measurements, ~15 m point spacing
-ARGUS, CSV files:
 - thk_obs_axeltest.exp contains XY coordinates of point measurements along flight tracks (split into segments)
 - thk_obs_axeltest.csv also includes measured ice thickness (as single segment)
 
