@@ -4,6 +4,7 @@
 Testing ISSM for modelling ice thickness over single ice mass on southern Axel Heiberg Island, Canadian Arctic.
 
 
+
  ## System and installation
  ISSM 4.22 (Release 2022-10-27) installed from source on Intel-based MacBookPro with OS version 12.6 (Monterey) and Python 3.7.16+ (dev).
 
@@ -33,6 +34,7 @@ Testing ISSM for modelling ice thickness over single ice mass on southern Axel H
  }
  ```
 
+
 ## Input datasets
 
 #### Gridded data
@@ -47,19 +49,23 @@ Surface mass balance: [Noël (2017)](https://doi.pangaea.de/10.1594/PANGAEA.8813
 Ice surface elevation change: [Hugonnet et al. (2021)](https://www.sedoo.fr/theia-publication-products/?uuid=c428c5b9-df8f-4f86-9b75-e04c778e29b9) Global glacier elevation change dataset. 2010-2020 average m/yr, 100 m
 
 
+
 #### Glacier outlines
 Glacier outlines: [Randolph Glacier Inventory 7.0](https://www.glims.org/RGI/) (RGIv7) Version 9 (2023 Release)
 ARGUS files:
-domain_rgiX.exp contains domain outline and nunataks (holes) as closed contours
-domain_rgiX_outline.exp and domain_rgiX_holes.ext split outline and hole contours in separate files
+- domain_rgiX.exp contains domain outline and nunataks (holes) as closed contours
+- domain_rgiX_outline.exp and domain_rgiX_holes.ext split outline and hole contours in separate files
+
 
 
 #### Radar data
 Ice thickness observations: Operation Icebridge MCoRDS ice thickness measurements, ~15 m point spacing
 ARGUS, CSV files:
-thk_obs_axeltest.exp contains XY coordinates of point measurements along flight tracks (split into segments)
-thk_obs_axeltest.csv also includes measured ice thickness (as single segment)
+- thk_obs_axeltest.exp contains XY coordinates of point measurements along flight tracks (split into segments)
+- thk_obs_axeltest.csv also includes measured ice thickness (as single segment)
 
 Wide-swath OIB MCoRDS ice thickness data, ~15 m along-track and ~15-130 m across-track spacing point spacing
 Gridded at 25 m across a 1.5-3 km wide swath along flight track
 
+
+![radar tracks location](axeltest_region.jpg)
