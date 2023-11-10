@@ -22,9 +22,9 @@ rname = 'axeltest'
 # 
 from model import *
 from triangle import triangle
-from bamg import bamg
+from bamg import bamg       # edited file in "./bin_edit/"
 from InterpFromGridToMesh import InterpFromGridToMesh
-from export_netCDF_DM import export_netCDF    # edited file in "./bin_edit/"
+from export_netCDF import export_netCDF    # edited file in "./bin_edit/"
 from loadmodel import loadmodel
 from plotmodel import plotmodel
 from verbose import verbose
@@ -42,7 +42,7 @@ from SetIceSheetBC import SetIceSheetBC
 # from read_netCDF import netCDFRead
 # from m1qn3inversion import m1qn3inversion
 
-# For meshing radar tracks??... not work
+
 # from ContourToNodes import ContourToNodes
 # from ContourToMesh import ContourToMesh
 # from BamgTriangulate import BamgTriangulate
@@ -50,7 +50,7 @@ from SetIceSheetBC import SetIceSheetBC
 
 
 # Steps: 1=mesh, 2=parameterize, 3=solve
-steps = [3]
+steps = [1]
 
 
 
@@ -66,22 +66,24 @@ if 1 in steps:
 
   #Generate observations
   domain = 'data/domain_rgiX.exp'
-  hinit = 500 		# element size for the initial mesh
-  hmax = 5000 		# maximum element size of the final mesh (low res in regions of slow flow)
+  tracks = 'data/radar_5tracks.exp'
+  hinit = 5000 		# element size for the initial mesh
+  hmax = 10000 		# maximum element size of the final mesh (low res in regions of slow flow)
   hmin = 100 		# minimum element size of the final mesh (high res in regions of fast flow)
   gradation = 1.5 	# maximum size ratio between two neighboring elements
   errmax = 5 			# maximum error between interpolated and control field
 
-  # #===== TO DO: FOLLOW TRACKS ==========================
+  # #===== TO DO: ADD THK DATA TO TRACKS ==========================
   # # Load thickness observations (point measurements)
-  # tracks = 'data/thk_obs_axeltest.exp' # exp, csv
+  # tracks = 'data/thk_obs_axeltest.csv'
 
   # Generate an initial uniform mesh (resolution = hinit m)
-  md = bamg(model(),'domain',domain,'hmax',hinit) ## ,'tracks',tracks)
+  # md = bamg(model(), 'domain',domain,'hmax',hmax,'tracks',traX)
+  md = bamg(model(), 'domain',domain,'hmax',hinit,'hmin',1000,'verbose',5,'tracks',traX)
+
   #Name and Coordinate system
   md.miscellaneous.name = rname
   md.mesh.epsg = 3413
-
 
   mname = "models/" + rname + '_initmesh.nc'
   export_netCDF(md, mname)
