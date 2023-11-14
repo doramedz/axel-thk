@@ -1,5 +1,5 @@
 ##==========================================================================================
-# EDITED: 09.11.2023
+# EDITED: 14.11.2023
 # D Medrzycka
 ##=========================================
 # Loop over and reshape data for adding tracks to mesh
@@ -290,9 +290,11 @@ def bamg(md, *args):
 
             # Add all points to bamg_geometry
             #nods = holes[i]['nods'] - 1  # the hole is closed (hole[0] = hole[-1])
-            bamg_geometry.Vertices = np.vstack((bamg_geometry.Vertices, np.vstack((holes[i]['x'][0:nods], holes[i]['y'][0:nods], np.ones((nods)))).T))
-            bamg_geometry.Edges = np.vstack((bamg_geometry.Edges, np.vstack((np.arange(count + 1, count + nods + 1), np.hstack((np.arange(count + 2, count + nods + 1), count + 1)), 1. * np.ones((nods)))).T))
-            bamg.geometry.SubDomains = np.vstack((bamg_geometry.SubDomains, [2, count + 1, 1, -hole_ref]))
+            bamg_geometry.Vertices = np.vstack((bamg_geometry.Vertices, np.vstack((holes[i]['x'][0:nods], holes[i]['y'][0:nods], 2. * np.ones((nods)))).T))
+            bamg_geometry.Edges = np.vstack((bamg_geometry.Edges, np.vstack((np.arange(count + 1, count + nods + 1), np.hstack((np.arange(count + 2, count + nods + 1), count + 1)), 2. * np.ones((nods)))).T))
+            # EDIT: add holes w/ empty subdomain
+            if subdomain_ref > 1:
+                bamg.geometry.SubDomains = np.vstack((bamg_geometry.SubDomains, [2, count + 1, 1, -hole_ref]))
             hole_ref = hole_ref + 1
 
             # Update counter

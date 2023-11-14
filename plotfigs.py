@@ -76,7 +76,7 @@ plt.savefig(fname, dpi=300)
 
 #=== Ice thickness =====#
 fname = "figs/" + rname + "_thk.png"
-plotmodel(md, 'data', md.geometry.thickness, 'caxis',[0, 850], 'title', 'ice thickness [m]')
+plotmodel(md, 'data', md.geometry.thickness, 'caxis',[0, 950], 'title', 'ice thickness [m]')
 plt.savefig(fname, dpi=300)
 
 #=== SMB =====#
@@ -89,9 +89,9 @@ fname = "figs/" + rname + "_dhdt.png"
 plotmodel(md, 'data', md.balancethickness.thickening_rate, 'caxis',[-5, 5], 'title', 'dhdt [m/yr]')
 plt.savefig(fname, dpi=300)
 
-#=== Thickness observations + boundary constraints =====#
-fname = "figs/" + rname + "_thk_obs_bound.png"
-plotmodel(md, 'data', md.balancethickness.spcthickness, 'caxis', [0, 625], 'title', 'thickness obs + boundary [m]')
+#=== Thickness constraints =====#
+fname = "figs/" + rname + "_thk_constraints.png"
+plotmodel(md, 'data', md.balancethickness.spcthickness, 'caxis', [0, 650], 'title', 'thickness constraints [m]')
 plt.savefig(fname, dpi=300)
 
 
@@ -113,4 +113,8 @@ plt.savefig(fname, dpi=300)
 
 fname = "figs/" + rname + "_results_thk_lim.png"
 plotmodel(md, 'data', md.results.BalancethicknessSolution.Thickness, 'title', 'balance thickness solution m', 'caxis', [0,1000])
+plt.savefig(fname, dpi=300)
+
+fname = "figs/" + rname + "_boundary_conditions.png"
+plotmodel(md, 'data', 'BC')
 plt.savefig(fname, dpi=300)
