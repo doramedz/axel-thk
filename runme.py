@@ -35,18 +35,17 @@ from setmask import setmask
 from parameterize import parameterize
 from setflowequation import setflowequation
 from SetIceSheetBC import SetIceSheetBC
+from ContourToNodes import ContourToNodes
+from BamgTriangulate import BamgTriangulate
+from InterpFromMeshToMesh2d import InterpFromMeshToMesh2d
 
 # Not use for now
 # from cuffey import cuffey
 # from paterson import paterson
 # from read_netCDF import netCDFRead
 # from m1qn3inversion import m1qn3inversion
-
-
-# from ContourToNodes import ContourToNodes
 # from ContourToMesh import ContourToMesh
-# from BamgTriangulate import BamgTriangulate
-# from InterpFromMeshToMesh2d import InterpFromMeshToMesh2d
+
 
 
 # Steps: 1=mesh, 2=parameterize, 3=solve
@@ -65,21 +64,18 @@ if 1 in steps:
   print('   Step 1: Make mesh')
 
   #Generate observations
-  domain = 'data/domain_rgiX.exp'
-  tracks = 'data/radar_5tracks.exp'
+  domainfile = 'data/domain_rgiX_outline.exp'
+  holesfile = 'data/domain_rgiX_holes.exp'
+  tracksfile = 'data/radar_5tracks.exp'
   hinit = 5000 		# element size for the initial mesh
   hmax = 10000 		# maximum element size of the final mesh (low res in regions of slow flow)
   hmin = 100 		# minimum element size of the final mesh (high res in regions of fast flow)
   gradation = 1.5 	# maximum size ratio between two neighboring elements
   errmax = 5 			# maximum error between interpolated and control field
 
-  # #===== TO DO: ADD THK DATA TO TRACKS ==========================
-  # # Load thickness observations (point measurements)
-  # tracks = 'data/thk_obs_axeltest.csv'
-
   # Generate an initial uniform mesh (resolution = hinit m)
-  # md = bamg(model(), 'domain',domain,'hmax',hmax,'tracks',traX)
-  md = bamg(model(), 'domain',domain,'hmax',hinit,'hmin',1000,'verbose',5,'tracks',traX)
+  # md = bamg(model(), 'domain',domainfile,'hmax',hmax,'tracks',tracksfile)
+  md = bamg(model(), 'domain',domainfile,'holes',holesfile,'hmax',hinit,'verbose',5,'tracks',tracksfile)
 
   #Name and Coordinate system
   md.miscellaneous.name = rname
@@ -265,9 +261,66 @@ if 2 in steps:
   ncdata.close()
 
   # Interpolate onto coarse mesh
-  thk_obs = InterpFromGridToMesh(x, np.flipud(y), np.flipud(dat), md.mesh.x, md.mesh.y, np.nan)
+  rad_swath = InterpFromGridToMesh(x, np.flipud(y), np.flipud(dat), md.mesh.x, md.mesh.y, np.nan)
   del x, y, dat
 
+#=============================================x
+#===== RADAR TRACKS DATA (m) ==================
+  # Load radar tracks
+  print('       ----Load radar tracks')
+  radarfile = 'data/radar_5tracks.csv' # radar_5tracks
+  # tracksfile = 'data/radar_5tracks.exp'
+
+  # CSV colnames: X,Y,yr,doy,top,bed,thk
+  xpos, ypos, yr, doy, top, bed, H = np.loadtxt(radarfile, delimiter=',', skiprows=1, unpack=True)
+
+  # Set index of triangulation elements
+  indx = BamgTriangulate(xpos, ypos)
+  # Interpolate to mesh
+  radar = InterpFromMeshToMesh2d(indx, xpos, ypos, H, md.mesh.x, md.mesh.y)[:, 0]
+
+  # Flag vertices on radar tracks
+  # Not work w/ open contours??: # includes nodes "in contour": between tracks
+  # flgs = ContourToNodes(md.mesh.x, md.mesh.y, tracksfile, 1)[0][:, 0]
+
+  #== CLUNKY WORKAROUND
+  # Flag boundary nodes by segment markers: (segment: [vertex vertex element])
+  # Principal domain = 1
+  mark1 = np.where(md.mesh.segmentmarkers == 1)[0]
+  vdom = np.unique(np.hstack((md.mesh.segments[mark1, 0], md.mesh.segments[mark1, 1]))) -1
+  # Holes = 2
+  mark2 = np.where(md.mesh.segmentmarkers == 2)[0]
+  vhole = np.unique(np.hstack((md.mesh.segments[mark2, 0], md.mesh.segments[mark2, 1]))) -1
+  # Tracks = 3
+  mark3 = np.where(md.mesh.segmentmarkers == 3)[0]
+  vtrack = np.unique(np.hstack((md.mesh.segments[mark3, 0], md.mesh.segments[mark3, 1]))) -1
+  del mark1, mark2, mark3
+
+  # Set all boundary nodes to NaN
+  vbound = np.zeros((md.mesh.numberofvertices))
+  vbound[np.nonzero(md.mesh.vertexonboundary == 1)] = np.nan
+  # Remap
+  vbound[vdom] = 1
+  vbound[vhole] = 2
+  vbound[vtrack] = 3
+  # Check if any NaN left
+  np.sum(np.isnan(vbound))
+  
+  # Map radar tracks to mesh
+  rad_track = np.nan * np.ones((md.mesh.numberofvertices))
+  rad_track[vtrack] = radar[vtrack]
+  del vdom, vhole, vtrack
+
+
+
+  #=== radar extra plots =====#
+  fname = "figs/" + rname + "_radar_swath.png"
+  plotmodel(md,'data',rad_swath,'title','radar wide swath thk [m]')
+  plt.savefig(fname, dpi=300)
+
+  fname = "figs/" + rname + "_radar_tracks.png"
+  plotmodel(md,'data',rad_track,'title','radar tracks thk [m]')
+  plt.savefig(fname, dpi=300)
 
 #=============================================x
 #===== SET PARAMS =============================
@@ -276,6 +329,7 @@ if 2 in steps:
 
   print('       ----Parameterize')
 #===== Initialise velocities
+  print('           --init vel')
   md.initialization.vx = vx_obs
   md.initialization.vy = vy_obs
   md.initialization.vz = np.zeros((md.mesh.numberofvertices))
@@ -291,6 +345,7 @@ if 2 in steps:
   # md.inversion.vel_obs = md.initialization.vel
 
 #===== Set geometry
+  print('           --set geom')
   md.geometry.surface = surf
   md.geometry.thickness = thk
   # Set min thickness
@@ -300,17 +355,22 @@ if 2 in steps:
   md.geometry.bed = md.geometry.surface - md.geometry.thickness
 
 #===== Set mass balance
+  print('           --set smb')
   # Convert to m/yr ice: materials.rho_water and rho_ice (pre-defined)
   md.smb.mass_balance = smb/1000 # m/yr w.e.
   md.smb.mass_balance = md.smb.mass_balance * md.materials.rho_water / md.materials.rho_ice
 
 #===== Set other boundary conditions
+  print('           --set boundary conditions')
   # Ocean mask (grounded > 0, floating < 0, coast/grounding line == 0)
   md.mask.ocean_levelset = np.ones((md.mesh.numberofvertices)) # grounded == 1)
   # Ice mask (ice < 0, rock > 0, ice front == 0)
   md.mask.ice_levelset = -1 * np.ones((md.mesh.numberofvertices)) # ice == -1)
   # Sets ice front at boundary (ice front == 0)
+  # ALL BOUNDARY VERTICES
   md.mask.ice_levelset[np.nonzero(md.mesh.vertexonboundary == 1)] = 0
+  # BOUNDARY VERTICES w/ FLAGS domain == 1, holes == 2 
+  # md.mask.ice_levelset[np.isin(vbound, [1,2])] = 0      # NOT include tracks (== 3)
 
   md.basalforcings.floatingice_melting_rate = np.zeros((md.mesh.numberofvertices))  # (positive if melting)
   md.basalforcings.groundedice_melting_rate = np.zeros((md.mesh.numberofvertices))  # (positive if melting)
@@ -320,6 +380,7 @@ if 2 in steps:
   # md.stressbalance.spcvz = np.nan * np.ones((md.mesh.numberofvertices))
 
   #=== Params for balancethickness solution
+  print('           --balance thickness params')
   # stabilization # 0: None, 1: SU, 2: SSA's artificial diffusivity, 3: discontinuous Galerkin (DG?)
   md.balancethickness.stabilization = 1
   md.balancethickness.thickening_rate = dhdt
@@ -327,9 +388,12 @@ if 2 in steps:
   # thickness constraints: set minimum thickness at domain boundary
   md.balancethickness.spcthickness = np.nan * np.ones((md.mesh.numberofvertices))
   md.balancethickness.spcthickness[np.nonzero(md.mesh.vertexonboundary == 1)] = 1
-  # fill in radar thickness measurements
-  pos = np.where(~np.isnan(thk_obs))[0]
-  md.balancethickness.spcthickness[pos] = thk_obs[pos]
+  # fill in radar wide swath thickness measurements
+  fill = np.where(~np.isnan(rad_swath))[0]
+  md.balancethickness.spcthickness[fill] = rad_swath[fill]
+  # fill in radar tracks thickness measurements
+  fill = np.where(~np.isnan(rad_track))[0]
+  md.balancethickness.spcthickness[fill] = rad_track[fill]
 
 
   print('       ----Export model')
